@@ -4,37 +4,28 @@ import { NavbarLinks } from '../../data/navbar-links';
 import { IoIosArrowDown } from "react-icons/io";
 import { Link , matchPath, useLocation, useNavigate } from 'react-router-dom';
 import { getCatagoty } from '../../services/operations/getCatagory';
-import { apiConnector } from '../../services/apiConnector';
-import {categories} from '../../services/api'
 import { useDispatch, useSelector } from 'react-redux';
 import { IoCart } from "react-icons/io5";
 import { FaCaretDown } from "react-icons/fa6";
 import { MdDashboard } from "react-icons/md";
 import { IoLogOut } from "react-icons/io5";
 import { logOut } from '../../services/operations/authOperation';
+import { getCatagory } from '../../services/operations/courseOperation';
 
-const {CATEGORIES_API}=categories
 
 function Navbar() {
-  const [allCatagory,setAllCaragory]=useState([]);
   const[clickOnPP,setClickOnPP]=useState(false);
 
   const navigate=useNavigate();
   const dispatch=useDispatch();
 
   const {userData}=useSelector((state)=>state.auth)
+  const {catagory}=useSelector((state)=>state.course)
 
-  const fetchCatagory=async()=>{
-    try {
-      const response=await apiConnector('GET',CATEGORIES_API)
-      setAllCaragory(response.data.allCatagories)
-    } catch (error) {
-      console.log('Error Occures While Fetching Catagory => ', error)
-    }
-  }
+  
 
   useEffect(()=>{
-    fetchCatagory()
+    dispatch(getCatagory())
   },[])
 
   const location=useLocation();
@@ -95,8 +86,8 @@ function Navbar() {
                             text-richblack-25 group-hover:flex flex-col px-4 py-3 w-52 rounded-lg -left-[70%] top-8 text-lg
                           '>
                               {
-                                allCatagory.length > 0 ? (
-                                  allCatagory.map((catagory, index) => (
+                                catagory.length > 0 ? (
+                                  catagory.map((catagory, index) => (
                                     <div key={index}>
                                       <button>
                                         <div className='w-44 my-1 hover:scale-90 duration-200 transition-all text-start px-3 py-1 rounded-md text-richblack-25 hover:bg-richblack-600'>

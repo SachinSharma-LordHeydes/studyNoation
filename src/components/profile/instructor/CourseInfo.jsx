@@ -1,18 +1,23 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import DropzoneFileInput from '../../common/DropzoneFileInput'
 import { RxCross2 } from "react-icons/rx";
 import YellowBlackBtn from '../../HomePage/YellowBlackBtn';
 import { RiArrowRightWideFill } from "react-icons/ri";
 import { useDispatch, useSelector } from 'react-redux';
-import { setCurrentStep } from '../../../features/profile/profileSlice';
+import { setCurrentStep, setEditOrNextStatus } from '../../../features/profile/profileSlice';
 import { useForm } from 'react-hook-form';
+import { createCourse, editCourse, getCatagory, } from '../../../services/operations/courseOperation';
+import { setThumbnailPreview } from '../../../features/Courses/coursesSlice';
 
 function CourseInfo() {
 
   const [listRequirement,setListRequirement]=useState([])
 
-  const {currentStep}=useSelector((state)=>state.profile)
+  const {currentStep,editOrNextStatus}=useSelector((state)=>state.profile)
+  const {catagory,courseDetails}=useSelector((state)=>state.course)
+  const {token}=useSelector((state)=>state.auth)
   const dispatch=useDispatch();
+
 
 
   const {
@@ -20,16 +25,150 @@ function CourseInfo() {
     handleSubmit,
     getValues,
     setValue,
+    setError,
     formState: { errors },
-  } = useForm();
+  } = useForm({
+    defaultValues: {
+      thumbnail: null, // Add default value for thumbnail
+    }
+  });
 
-  const onSubmit = (data) => {
+  useEffect(()=>{
+    console.log("currentStep and editOrNextStatus",currentStep,editOrNextStatus)
+  })
 
-    console.log("Clicked")
-    console.log("current Step, Data=> ", currentStep, data)
+  useEffect(() => {
+    if (courseDetails) {
+      // Pre-fill form fields when courseDetails is available
+      setValue('courseName', courseDetails.courseName);
+      setValue('courseDescp', courseDetails.courseDescp);
+      setValue('price', courseDetails.price);
+      setValue('catagory', courseDetails.catagoryName);
+      setValue('courseTag', courseDetails.courseTag);
+      setValue('whatWillYouLearn', courseDetails.whatWillYouLearn);
+
+      console.log("CourseFetails => ",courseDetails)
+      
+      // Pre-fill requirements list if available
+      if (courseDetails.requirement) {
+        setListRequirement(courseDetails.requirement);
+      }
+      if (courseDetails.thumbnail) {
+        dispatch(setThumbnailPreview(courseDetails.thumbnail));
+      }
+    }
+  }, [courseDetails, setValue, dispatch]);
+
+  // const onSubmit = (data) => {
+
+  //   const formData = new FormData();
+    
+  //   formData.append('courseName', data.courseName);
+  //   formData.append('courseDescp', data.courseDescp);
+  //   formData.append('price', data.price);
+  //   formData.append('catagory', data.catagory);
+  //   formData.append('courseTag', data.courseTag);
+  //   formData.append('whatWillYouLearn', data.whatWillYouLearn);
+  //   formData.append('thumbnail', data.thumbnail || courseDetails?.thumbnail);
+    
+  //   if (courseDetails?.thumbnail) {
+  //     console.log("Thumbnail is present");
+  //     console.log("Thumbnail is present");
+  //     // formData.append('thumbnail', courseDetails?.thumbnail);
+  //   } else {
+  //     console.log("Thumbnail is missing or not set correctly");
+  //   }
+    
+  //   console.log("FormData contents:", Object.fromEntries(formData));
+  //   // console.log("FormData contents 2=>:",formData);  //showing Empty object
+  //   if(editOrNextStatus===1){
+  //     console.log("Creating Course")
+  //     dispatch(createCourse(formData,token))
+  //   }else{
+  //     console.log("Editing Course")
+  //     const id=courseDetails?._id
+  //     formData.append('id', id); 
+  //     // dispatch(setEditOrNextStatus(editOrNextStatus - 1));
+  //     dispatch(editCourse(Object.fromEntries(formData),token))
+  //   }
+  //   console.log("FormData from Course info pAge => ",formData)
+  //   dispatch(setCurrentStep(currentStep + 1));
+  // };
+
+
+  // CourseInfo component form submission update
+const onSubmit = (data) => {
+  try {
+
+    if (!data.thumbnail || !(data.thumbnail instanceof File)) {
+      setError('thumbnail', {
+        type: 'manual',
+        message: 'Thumbnail is required',
+      });
+      return;  // Stop form submission if there's no thumbnail
+    }
+
+    if(editOrNextStatus === 1) {
+      // Create new course - needs file upload
+      const formData = new FormData();
+      formData.append('courseName', data.courseName);
+      formData.append('courseDescp', data.courseDescp);
+      formData.append('price', data.price);
+      formData.append('catagory', data.catagory);
+      formData.append('courseTag', data.courseTag);
+      formData.append('whatWillYouLearn', data.whatWillYouLearn);
+      
+      // For new course, append file directly
+      if (data.thumbnail instanceof File) {
+        formData.append('thumbnail', data.thumbnail);
+      }else{
+        setError('thumbnail', {
+          type: 'manual',
+          message: 'Thumbnail is Required',
+        });
+      }
+      
+      // if (!data.thumbnail) {
+      //   setError('thumbnail', {
+      //     type: 'manual',
+      //     message: 'Thumbnail is Required',
+      //   });
+      // }
+      
+      console.log("Creating Course");
+      dispatch(createCourse(formData, token));
+    } else {
+      // Edit existing course
+      const courseData = {
+        courseName: data.courseName,
+        courseDescp: data.courseDescp,
+        price: data.price,
+        catagory: data.catagory,
+        courseTag: data.courseTag,
+        whatWillYouLearn: data.whatWillYouLearn,
+        id: courseDetails._id,
+      };
+
+      // For edit, only append new thumbnail if it's changed
+      if (data.thumbnail instanceof File) {
+        const formData = new FormData();
+        Object.keys(courseData).forEach(key => {
+          formData.append(key, courseData[key]);
+        });
+        formData.append('thumbnail', data.thumbnail);
+        dispatch(editCourse(formData, token));
+      } else {
+        // If thumbnail hasn't changed, send the existing URL
+        courseData.thumbnail = courseDetails.thumbnail;
+        dispatch(editCourse(courseData, token));
+      }
+    }
+    
     dispatch(setCurrentStep(currentStep + 1));
-  };
-
+  } catch (error) {
+    console.error("Error in form submission:", error);
+  }
+};
 
 
   const handelAddList =  ()=>{
@@ -49,6 +188,10 @@ function CourseInfo() {
     setListRequirement(newListRequirement)
   }
 
+  function handelGetCourses(){
+    dispatch(getCatagory())
+  }
+
 
   return (
     <div className='bg-richblack-800 px-6 py-7 rounded-lg'>
@@ -56,15 +199,15 @@ function CourseInfo() {
       <div className='space-y-9'>
 
         <div className='flex flex-col space-y-2'>
-          <label htmlFor="courseTitle">Course Title</label>
+          <label htmlFor="courseName">Course Title</label>
           <input 
             type="text" 
-            name="courseTitle" 
-            id="courseTitle" 
+            name="courseName" 
+            id="courseName"
             className='bg-richblack-600 rounded-md px-4 py-2 text-lg '
-            {...register('courseTitle',{ required: true })}
+            {...register('courseName',{ required: true })}
           />
-          {errors.courseTitle && <p className='text-[#FF0000] text-xs'>Course Title is required *</p>}
+          {errors.courseName && <p className='text-[#FF0000] text-xs'>Course Title is required *</p>}
         </div>
 
         <div className='flex flex-col space-y-2'>
@@ -81,60 +224,70 @@ function CourseInfo() {
         </div>
 
         <div className='flex flex-col space-y-2 relative'>
-          <label htmlFor="coursePrice">Course Price</label>
+          <label htmlFor="price">Course Price</label>
           <input 
             type="Number" 
-            name="coursePrice" 
-            id="coursePrice" 
+            name="price" 
+            id="price" 
             className='bg-richblack-600 rounded-md px-4 py-2 text-lg pl-10 '
-            {...register('coursePrice',{ required: true })}
+            {...register('price',{ required: true })}
           />
-          {errors.coursePrice && <p className='text-[#FF0000] text-xs'>coursePrice is required *</p>}
+          {errors.price && <p className='text-[#FF0000] text-xs'>coursePrice is required *</p>}
           <span className='absolute top-9 left-4'>रू</span>
         </div>
 
-        <div className='flex flex-col space-y-2'>
-          <label htmlFor="courseTag">Tags</label>
-          <input 
-            type="text" 
-            name="courseTag" 
-            id="courseTag" 
-            className='bg-richblack-600 rounded-md px-4 py-2 text-lg '
-            {...register('courseTag',{ required: true ,  valueAsNumber: true,})}
-          />
-          {errors.courseTag && <p className='text-[#FF0000] text-xs'>Tags is required *</p>}
+
+        <div onClick={handelGetCourses} className='flex flex-col space-y-2'>
+          <label htmlFor="catagory">Catagory</label>
+          <div >
+            <select 
+              name='catagory'
+              id='catagory'
+              className='bg-richblack-600 rounded-md px-4 py-3 text-lg w-full'
+              {...register('catagory',{ required: true })}
+            >
+              {
+                catagory.map((element,index)=>(
+                  <option key={index}>
+                    {element.name}
+                  </option>
+                ))
+              }
+            </select>
+          </div>
+          {errors.catagory && <p className='text-[#FF0000] text-xs'>Catagory is required *</p>}
         </div>
 
         <div  className='flex flex-col space-y-2'>
-          <label htmlFor="thumbnail">Course  Thumbnail</label>
-          <DropzoneFileInput register={register('thumbnail', { required: true })} />
-          {errors.courseTag && <p className='text-[#FF0000] text-xs'>Thumbnail is required *</p>}
+          <label htmlFor="thumbnail">Course Thumbnail</label>
+          <DropzoneFileInput courseDetails={courseDetails} register={register('thumbnail', { required: true })} setValue={setValue} />
+          {errors.thumbnail && <p className='text-[#FF0000] text-xs'>Thumbnail is required *</p>}
         </div>
 
         <div className='flex flex-col space-y-2'>
-          <label htmlFor="courseAdvg">Benefits of the course</label>
+          <label htmlFor="whatWillYouLearn">Benefits of the course</label>
           <textarea 
             type="text" 
-            name="courseAdvg" 
-            id="courseAdvg" 
+            name="whatWillYouLearn" 
+            id="whatWillYouLearn" 
             className='bg-richblack-600 rounded-md px-4 py-2 text-lg min-h-[90px]'
-            {...register('courseAdvg',{ required: true })}
+            {...register('whatWillYouLearn',{ required: true })}
           />
-          {errors.courseAdvg && <p className='text-[#FF0000] text-xs'>Benefits of the course is required *</p>}
+          {errors.whatWillYouLearn && <p className='text-[#FF0000] text-xs'>Benefits of the course is required *</p>}
         </div>
 
 
         <div className=''>
           <div className='flex flex-col space-y-2'>
-            <label htmlFor="requirement">Requirements/Instructions</label>
+            <label htmlFor="requirement">Tags</label>
             <input 
               type="text" 
-              name="requirement" 
-              id="requirement" 
+              name="courseTag" 
+              id="courseTag"
               className='bg-richblack-600 rounded-md px-4 py-2 text-lg '
               {...register('requirement',{ required:  !listRequirement.length })}
               />
-              {errors.requirement && <p className='text-[#FF0000] text-xs'>Requirements/Instructions is required *</p>}
+              {errors.requirement && <p className='text-[#FF0000] text-xs'>Tags are required *</p>}
           </div>
           <div className='mt-3 px-2'>
               <div onClick={handelAddList} className='text-yellow-50 font-semibold hover:cursor-pointer'>ADD</div>

@@ -6,134 +6,11 @@ const { uploadFiles } = require("../utils/fileUploader");
 require("dotenv").config();
 
 
-// exports.createSubSection=async(req,res)=> {
-  
-//   try {
-//     // console.log("request Body => ",req.body)
-//     const {title,timeDuration,description,id}=req.body;
-//     // console.log("Req.FIles => ",req.files)
-//     id=id.replace(":","");
-//     const {videoURL}=req.files;
-
-//     if(!title || !timeDuration || !description || !videoURL){
-//       return req.ststus(403).json({
-//         success:false,
-//         message:`All fields are requires to create Subsections`
-//       });
-//     }
-
-//     const videoUploaded=await uploadFiles(videoURL,process.env.FOLDER_NAME);
-
-//     const newSubSection=await subSectionModel.create(
-//       {
-//         title,
-//         timeDuration,
-//         description,
-//         videoURL:videoUploaded.secure_url
-//       }
-//     );
-
-//     console.log("New SubSection Data => ",newSubSection)
-
-//     const updatedSection=await sectionModel.findOneAndUpdate(
-//       {id},
-//       {
-//         subSection:newSubSection._id
-//       }
-//     )
-
-
-//     return res.status(200).json({
-//       success:true,
-//       message:`SuccessFully Create SubSection`,
-//       data:updatedSection
-//     })
-
-
-//   } catch (error) {
-//     return res.status(500).json({
-//       success:false,
-//       message:`Unable to Create SubSection because of ERROR => ${error}`
-//     })
-//   }
-
-
-// }
-
-
-
-
-
-// exports.createSubSectionHandler = async (req, res) => {
-//   try {
-//     console.log("Req => ", req.body);
-//     console.log("Request Params => ", req.files);
-
-//     const { title, description, video, id,courseId } = req.body;
-//     const validObjectId = id.replace(':', '');
-
-//     if (!title || !id) {
-//       return res.status(403).json({
-//         success: false,
-//         message: "Required fields are missing"
-//       });
-//     }
-
-//     // Assuming you're uploading the video and it returns a URL:
-//     const videoURL = video.path;  // Extract the path from the video object.
-
-//     // Create the sub-section with the correct videoURL string
-//     const newSubSection = await subSectionModel.create({
-//       title,
-//       description,
-//       videoURL  // This should now be the correct URL string
-//     });
-
-//     // Update the section to include the new sub-section
-//     const updatedSection = await sectionModel.findByIdAndUpdate(
-//       validObjectId,
-//       {
-//         $push: {
-//           subSection: newSubSection._id
-//         }
-//       },
-//       { new: true }
-//     ).populate("subSection");
-
-//     const updatedcourse = await courseModel.findByIdAndUpdate(
-//       courseId,
-//       {
-//         $push: {
-//           courseContent: updatedSection._id
-//         }
-//       },
-//       { new: true }
-//     ).populate("courseContent");
-
-//     return res.status(200).json({
-//       success: true,
-//       message: "Sub-Section Created Successfully",
-//       data: updatedcourse
-//     });
-
-//   } catch (error) {
-//     return res.status(500).json({
-//       success: false,
-//       message: `Unable to create Sub-Section`,
-//       error
-//     });
-//   }
-// };
-
-// const courseModel = require("../Models/courseModel");
-// const sectionModel = require("../Models/sectionModel");
-// const subSectionModel = require("../Models/subSectionModel");
 
 exports.createSubSectionHandler = async (req, res) => {
   try {
     const { title, description, video, id, courseId } = req.body;
 
-    // Make sure id is valid
     const validObjectId = id.replace(':', '');
 
     if (!title || !id) {
@@ -143,17 +20,14 @@ exports.createSubSectionHandler = async (req, res) => {
       });
     }
 
-    // Assuming you're uploading the video and it returns a URL:
-    const videoURL = video.path;  // Extract the path from the video object.
+    const videoURL = video.path;  
 
-    // Create the sub-section with the correct videoURL string
     const newSubSection = await subSectionModel.create({
       title,
       description,
       videoURL  // This should now be the correct URL string
     });
 
-    // Update the section to include the new sub-section
     const updatedSection = await sectionModel.findByIdAndUpdate(
       validObjectId,
       {
@@ -168,24 +42,14 @@ exports.createSubSectionHandler = async (req, res) => {
       select: 'title description videoURL'  // Select only the needed fields
     });
 
-    // Update the course to include the updated section
-    const updatedCourse = await courseModel.findByIdAndUpdate(
-      courseId,
-      {
-        $push: {
-          courseContent: updatedSection._id
-        }
-      },
-      { new: true }
-    )
-    .populate({
-      path: 'courseContent',  // Populate courseContent with section details
+
+    const updatedCourse = await courseModel.findById(courseId).populate({
+      path: 'courseContent', // Populate courseContent which contains sectionModel data
       populate: {
-        path: 'subSection',  // Also populate the subSection details within each section
-        model: subSectionModel,
-        select: 'title description videoURL'
+        path: 'subSection', // Inside each section, populate subSection which contains subSectionModel data
+        select: 'title description videoURL' // Select specific fields from subSection
       }
-    });
+    })
 
     return res.status(200).json({
       success: true,
@@ -205,94 +69,139 @@ exports.createSubSectionHandler = async (req, res) => {
 
 
 
-exports.updateSubSection=async(req,res)=>{
+exports.getSubSectionHandler=async(req,res)=>{
   try {
 
-    const {subSectionName,description,id}=req.body;
-    if(!subSectionName || !id){
-      return res.status(403).json({
-        success:true,
-        message:`Section Name and Id of The User is Not Present`
-      })
-    }
-
-    const updatedSubSection= await subSectionModel.findByIdAndUpdate(
-      id,
-      {
-        subSectionName,description
-      },
-      {new:true}
-    )
-
-    const updatedSection=await sectionModel.findOne(
-      {courseContent:id},
-      { new: true } // to return the updated document
-    ).populate("courseContent");
-
-    return res.status(200).json({
-      success:true,
-      message:"SubSection Updated Successfully",
-      data:updatedSection
-    })
-    
-  } catch (error) {
-    return res.status(500).json({
-      success:false,
-      message:`Unable to Update SubSection because of ERROR`,
-      error:error
-    })
-  }
-}
-
-
-
-exports.deleteSubSection=async(req,res)=>{
-  try {
-
-    const {id,courseId}=req.body;
-
-    console.log("Section ID: ", id);
-    console.log("Course ID: ", courseId);
-
+    const {id}=req.body;
+    console.log("get subsection req.bofy=> ",req.body)
     if(!id){
       return res.status(403).json({
         success:true,
-        message:`Section Name and Id of The User is Not Present`
+        message:`Id of The User is Not Present ro get SubSection Data`
       })
     }
 
-
-    const deletedSection = await sectionModel.findByIdAndDelete(id);
-    
-    if (!deletedSection) {
-      return res.status(404).json({
-        success: false,
-        message: 'Section not found'
-      });
-    }
-
-
-    const updatedCourse = await courseModel.findByIdAndUpdate(
-      courseId,
-      {
-        $pull: {
-          courseContent: id
-        }
-      },
-      { new: true }
-    ).populate('courseContent');
-
+    const subSectionData= await subSectionModel.findById(id)
     return res.status(200).json({
       success:true,
-      message:"Section Deleted Successfully",
-      data:updatedCourse
+      message:"SubSection Data Fetched Successfully",
+      data:subSectionData
     })
     
   } catch (error) {
     return res.status(500).json({
       success:false,
-      message:`Unable to delete Section because of ERROR`,
+      message:`Unable to Fetch SubSection data because of ERROR`,
       error:error
     })
   }
 }
+
+exports.updateSubSection = async (req, res) => {
+  try {
+    const { subSectionName, description, id, courseId, sectionId } = req.body;
+
+    if (!subSectionName || !id) {
+      return res.status(403).json({
+        success: false,
+        message: `SubSection Name and Id are required`
+      });
+    }
+
+    // Update the sub-section
+    const updatedSubSection = await subSectionModel.findByIdAndUpdate(
+      id,
+      {
+        title: subSectionName,  // Assuming title corresponds to subSectionName
+        description
+      },
+      { new: true }
+    );
+
+    // Get the updated course data with populated sub-sections
+    const updatedCourse = await courseModel.findById(courseId)
+      .populate({
+        path: 'courseContent',
+        populate: {
+          path: 'subSection',
+          model: 'subSectionModel',
+          select: 'title description videoURL'
+        }
+      });
+
+    return res.status(200).json({
+      success: true,
+      message: "SubSection Updated Successfully",
+      data: updatedCourse
+    });
+
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: `Unable to update SubSection due to ERROR`,
+      error: error.message
+    });
+  }
+};
+
+
+
+exports.deleteSubSection = async (req, res) => {
+  try {
+    const { id, courseId, sectionId } = req.body;
+
+    console.log("Sub-Section ID: ", id);
+    console.log("Section ID: ", sectionId);
+    console.log("Course ID: ", courseId);
+
+    if (!id) {
+      return res.status(403).json({
+        success: false,
+        message: `SubSection ID is not provided`
+      });
+    }
+
+    // Remove the subsection from the section
+    const updatedSection = await sectionModel.findByIdAndUpdate(
+      sectionId,
+      {
+        $pull: { subSection: id }  // Remove the sub-section reference from the section
+      },
+      { new: true }
+    );
+
+    // Delete the sub-section document
+    const deletedSubSection = await subSectionModel.findByIdAndDelete(id);
+
+    if (!deletedSubSection) {
+      return res.status(404).json({
+        success: false,
+        message: 'SubSection not found'
+      });
+    }
+
+    // Get the updated course data after deleting the sub-section
+    const updatedCourse = await courseModel.findById(courseId)
+      .populate({
+        path: 'courseContent',
+        populate: {
+          path: 'subSection',
+          model: 'subSectionModel',
+          select: 'title description videoURL'
+        }
+      });
+
+    return res.status(200).json({
+      success: true,
+      message: "SubSection Deleted Successfully",
+      data: updatedCourse
+    });
+
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: `Unable to delete SubSection due to ERROR`,
+      error: error.message
+    });
+  }
+};

@@ -38,7 +38,8 @@ exports.resetPassMailHandler=async(req,res)=>{
 
     return res.status(200).json({
       success:true,
-      message:"Reset Mail Sent SuccessFully , Please Check Your Mail"
+      message:"Reset Mail Sent SuccessFully , Please Check Your Mail",
+      url:resetURl
     })
 
   } catch (error) {

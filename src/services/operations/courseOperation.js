@@ -11,7 +11,7 @@ export function getCatagory(){
   return async(dispatch)=>{
     try {
       const response=await apiConnector('GET',COURSE_CATEGORIES_API);
-      // console.log("Get Course Response => ",response)
+      console.log("Get Course Response => ",response)
       const catagory=response.data.allCatagories;
 
       dispatch(setCatagory(catagory))

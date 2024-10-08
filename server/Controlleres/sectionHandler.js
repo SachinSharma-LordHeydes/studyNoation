@@ -79,7 +79,14 @@ exports.createSectionHandler = async (req, res) => {
         }
       },
       { new: true } // to return the updated document
-    ).populate("courseContent"); // Populate the courseContent to see the new section data
+    ).populate({
+      path: "courseContent",  // Populate courseContent, which holds section IDs
+      populate: {
+        path: "subSection",  // Populate subSection inside each section
+        model: "subSectionModel",  // Reference to subSection model
+        select: "title description videoURL"  // Select specific fields to be returned
+      }
+    });
 
     return res.status(200).json({
       success: true,
@@ -119,7 +126,14 @@ exports.updateSection=async(req,res)=>{
     const updatedCourse= await await courseModel.findOne(
       {courseContent:id},
       { new: true } // to return the updated document
-    ).populate("courseContent");
+    ).populate({
+      path: "courseContent",  // Populate courseContent, which holds section IDs
+      populate: {
+        path: "subSection",  // Populate subSection inside each section
+        model: "subSectionModel",  // Reference to subSection model
+        select: "title description videoURL"  // Select specific fields to be returned
+      }
+    });
 
     return res.status(200).json({
       success:true,
@@ -170,7 +184,14 @@ exports.deleteSection=async(req,res)=>{
         }
       },
       { new: true }
-    ).populate('courseContent');
+    ).populate({
+      path: "courseContent",  // Populate courseContent, which holds section IDs
+      populate: {
+        path: "subSection",  // Populate subSection inside each section
+        model: "subSectionModel",  // Reference to subSection model
+        select: "title description videoURL"  // Select specific fields to be returned
+      }
+    });
 
     return res.status(200).json({
       success:true,

@@ -1,26 +1,46 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import { RxCross2 } from "react-icons/rx";
 import DropzoneFileInput from '../components/common/DropzoneFileInput';
 import YellowBlackBtn from '../components/HomePage/YellowBlackBtn';
 import { useDispatch, useSelector } from 'react-redux';
 import { setModalState } from '../features/profile/profileSlice';
 import { useForm } from 'react-hook-form';
-import { setSubSectionData } from '../features/Courses/sectionSlice';
-import { createSubSection } from '../services/operations/sectionOperations';
+// import { setSubSectionData } from '../features/Courses/sectionSlice';
+import { createSubSection, getSubSectionData } from '../services/operations/sectionOperations';
 
 function AddLectureModal() {
 
-  const {modalState,clickedSectionID}=useSelector((state)=>state.profile)
+  const {modalState,clickedSectionID,clickedSubSectionID}=useSelector((state)=>state.profile)
   const {courseDetails}=useSelector((state)=>state.course)
+  const {subSectionData}=useSelector((state)=>state.section)
   const dispatch=useDispatch()
+
+  useEffect(()=>{
+    dispatch(getSubSectionData(clickedSubSectionID))
+    console.log("Subsection Data on Edit From Add Lecture Modal=>",subSectionData)
+  },[])
 
   const {
     register,
     handleSubmit,
-    getValues,
     setValue,
     formState: { errors },
-  } = useForm();
+  } = useForm(
+    {
+      defaultValues:subSectionData?{
+        title:subSectionData?.title,
+        description:subSectionData?.description,
+        video:subSectionData?.videoURL
+
+      }
+      :
+      {
+        title:"",
+        description:"",
+        video:""
+      }
+    }
+  );
 
   const createSubSectionFunction=(data)=>{
     console.log("Form Data:", data);

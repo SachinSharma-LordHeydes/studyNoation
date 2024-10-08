@@ -6,9 +6,11 @@ const initialState={
   modalState:false,
   changeSectionNameModalState:false,
   confirmDeleteModalState:false,
+  toDelete:'',
   editOrNextStatus:1, //Next=>1 edit=>0
+  clickedCourseID:null,
   clickedSectionID:null,
-  clickedCourseID:null
+  clickedSubSectionID:null,
 }
 
 export const profileSlice=createSlice({
@@ -27,19 +29,26 @@ export const profileSlice=createSlice({
     setEditOrNextStatus:(state,action)=>{
       state.editOrNextStatus=action.payload
     },
-    setClickedSectionID:(state,action)=>{
-      state.clickedSectionID=action.payload
-    },
     setClickedCourseID:(state,action)=>{
       state.clickedCourseID=action.payload
     },
+    setClickedSectionID:(state,action)=>{
+      state.clickedSectionID=action.payload
+    },
+    setClickedSubSectionID:(state,action)=>{
+      state.clickedSubSectionID=action.payload
+    },
     setConfirmationDeleteModalStatus:(state,action)=>{
       state.confirmDeleteModalState=action.payload
+    },
+    setToDelete:(state,action)=>{
+      //-----------To Check
+      state.toDelete=action.payload
     },
   }
 })
 
 
-export const {setCurrentStep,setModalState,setChangeSectionNameModalState,setEditOrNextStatus,setClickedSectionID,setClickedCourseID,setConfirmationDeleteModalStatus} = profileSlice.actions;
+export const {setCurrentStep,setModalState,setChangeSectionNameModalState,setEditOrNextStatus,setClickedSectionID,setClickedCourseID,setClickedSubSectionID,setConfirmationDeleteModalStatus,setToDelete} = profileSlice.actions;
 
 export default profileSlice.reducer;

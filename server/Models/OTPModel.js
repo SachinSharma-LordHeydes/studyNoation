@@ -25,7 +25,7 @@ const OTPSchema=new mongoose.Schema(
 async function sendMail(email,OTP){
   try {
     const mailResponse=await mailSender(email,"Gmail verification",OTP);
-    console.log("Mail Sent SuccessFully => ",mailResponse);
+    console.log("Mail Sent SuccessFully otp model => ",mailResponse);
     console.log(process.env.MAIL_USER,process.env.MAIL_APP_PASSWORD)
   } catch (error) {
     console.log("Error occured while sending Mail => ",error)

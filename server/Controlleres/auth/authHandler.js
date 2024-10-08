@@ -12,7 +12,9 @@ require('dotenv').config();
 //SignUp
 exports.signUpHandler=async(req,res)=>{
   try {
+    console.log("req.body=>",req.body)
     const {firstName,lastName,email,password,confirmPassword,accountType,otp}=req.body;
+
 
     if(!firstName || !lastName || !email || !password || !confirmPassword || !accountType || !otp){
       return res.status(500).json({
@@ -37,12 +39,12 @@ exports.signUpHandler=async(req,res)=>{
       })
     }
 
-    const otpResponse = await OTPModel.find({ email }).sort({ createdAt: -1 }).limit(1); 
+    const otpResponse = await OTPModel.findOne({ email }).sort({ createdAt: -1 }).limit(1); 
     //To get The Latest OTP present in OPTModel } {-1=>Decending} {limit(1)=>to get Only ONE putput/response} usong sort with limt can manage order and quantity
 
     console.log("Backenf OTP response => ",otpResponse);
     
-    if (otpResponse.length === 0 || otp !== otpResponse[0].otp) {
+    if (otpResponse.length === 0 || otp !== otpResponse.otp) {
       return res.status(400).json({
         success: false,
         message: 'The OTP is not valid',
@@ -80,7 +82,8 @@ exports.signUpHandler=async(req,res)=>{
     console.log(error);
     return res.status(500).json({
       success:false,
-      message:error
+      message:error.message,
+      error:error
     })
   }
 }

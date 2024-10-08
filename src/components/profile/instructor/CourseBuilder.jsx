@@ -10,7 +10,7 @@ import { FaCaretDown } from "react-icons/fa";
 import { PiLineVerticalThin } from "react-icons/pi";
 import { FaPlus } from "react-icons/fa";
 import { useDispatch, useSelector } from 'react-redux';
-import { setChangeSectionNameModalState, setClickedCourseID, setClickedSectionID, setConfirmationDeleteModalStatus, setCurrentStep, setEditOrNextStatus, setModalState } from '../../../features/profile/profileSlice';
+import { setChangeSectionNameModalState, setClickedCourseID, setClickedSectionID, setClickedSubSectionID, setConfirmationDeleteModalStatus, setCurrentStep, setEditOrNextStatus, setModalState, setToDelete } from '../../../features/profile/profileSlice';
 import { createSection, deleteSection, editSection, getSection } from '../../../services/operations/sectionOperations';
 import ChangeSectionNameModal from '../../../page/ChangeSectionNameModal';
 import AddLectureModal from '../../../page/AddLectureModal';
@@ -20,18 +20,18 @@ import ConformationModal from '../../../page/ConformationModal';
 
 function CourseBuilder() {
 
-  const {modalState,currentStep,editOrNextStatus,changeSectionNameModalState,confirmDeleteModalState}=useSelector((state)=>state.profile)
+  const {modalState,currentStep,editOrNextStatus,changeSectionNameModalState,confirmDeleteModalState,clickedSectionID,clickedCourseID}=useSelector((state)=>state.profile)
   const {sectionData,subSectionData}=useSelector((state)=>state.section)
   const {courseDetails}=useSelector((state)=>state.course)
 
-  const [subSection,setSubSection]=useState(['Hii','My','Sub-Sections']);
+  // const [subSection,setSubSection]=useState(['Hii','My','Sub-Sections']);
   const [activeSection, setActiveSection] = useState(null);
 
   const dispatch=useDispatch();
 
   useEffect(()=>{
-    console.log("SubsectionData Data=>",subSectionData)
-  },[subSectionData])
+    console.log("SubsectionData Data=>",sectionData)
+  },[sectionData])
 
 
   const {
@@ -76,8 +76,11 @@ function CourseBuilder() {
   function clickToDeleteSection(index){
     console.log("Delete event=> ",sectionData.courseContent[index]._id,courseDetails?._id)
 
+    console.log("Clicked Sub-Section index",index)
+
     dispatch(setClickedSectionID(sectionData.courseContent[index]._id))
     dispatch(setClickedCourseID(courseDetails?._id))
+    dispatch(setToDelete('Section'))
 
     dispatch(setConfirmationDeleteModalStatus(!confirmDeleteModalState))
     
@@ -89,6 +92,24 @@ function CourseBuilder() {
     dispatch(setClickedSectionID(sectionData.courseContent[index]._id))
     dispatch(setChangeSectionNameModalState(!changeSectionNameModalState))
   }
+
+  function clickToDeleteSubSection(subSectionID,sectionID){
+    console.log("Clicked Sub-Section index",subSectionID,sectionID)
+    dispatch(setToDelete('Subsection'))
+    
+    dispatch(setClickedCourseID(courseDetails?._id))
+    dispatch(setClickedSectionID(sectionID))
+    dispatch(setClickedSubSectionID(subSectionID))
+    
+    dispatch(setConfirmationDeleteModalStatus(!confirmDeleteModalState))
+    
+  }
+
+  function clickToEditSubSection(subSectionID){
+    dispatch(setModalState(!modalState));
+    dispatch(setClickedSubSectionID(subSectionID))
+  }
+
 
 
   return (
@@ -118,13 +139,13 @@ function CourseBuilder() {
             <div className='w-full bg-richblack-700 rounded-md px-5 py-5 text-lg mt-10 '>
               <ul className=' '>
                 {
-                  sectionData.courseContent.map((element,index)=>(
+                  sectionData.courseContent.map((section,index)=>(
                       <li key={index} className='text-md '>
                         <div>
                           <div className='flex justify-between text-richblack-200'>
                             <div className='flex items-center gap-2'>
                               <div><FaArrowUpShortWide /></div>
-                              <div>{element.sectionName}</div>
+                              <div>{section.sectionName}</div>
                             </div>
                             <div className='flex gap-x-1'>
                               <button onClick={()=>clickToEditSection(index)} ><IoPencilOutline /></button>
@@ -140,16 +161,16 @@ function CourseBuilder() {
                           <div>
                             {
                               activeSection === index &&
-                              subSectionData.courseContent.map((element,index)=>(
+                              section.subSection.map((subSecName,subSecIndex)=>(
                                 <div key={index} className='w-[85%] mx-auto  '>
 
                                   <hr className='mt-3 mb-3 text-richblack-600 w-[95%] mx-auto' />
 
                                   <div className='flex justify-between text-sm text-richblack-200'>
-                                    <div>{element.title}</div>
-                                    <div className='flex gap-x-1'>
-                                      <button><IoPencilOutline /></button>
-                                      <button><MdDelete /></button>
+                                    <div>{subSecName.title}</div>
+                                    <div className='flex gap-x-2'>
+                                      <button onClick={()=>clickToEditSubSection(subSecName._id,section._id)}><IoPencilOutline /></button>
+                                      <button onClick={()=>clickToDeleteSubSection(subSecName._id,section._id)}><MdDelete /></button>
                                     </div>
                                   </div>
                                 </div>

@@ -1,20 +1,27 @@
 import React from 'react'
 import YellowBlackBtn from '../components/HomePage/YellowBlackBtn'
 import { useDispatch, useSelector } from 'react-redux'
-import { setChangeSectionNameModalState, setConfirmationDeleteModalStatus } from '../features/profile/profileSlice'
+import { setConfirmationDeleteModalStatus } from '../features/profile/profileSlice'
 import { RxCross2 } from 'react-icons/rx'
-import { deleteSection } from '../services/operations/sectionOperations'
+import { deleteSection, deleteSubSection } from '../services/operations/sectionOperations'
 
 function ConformationModal() {
 
-  const { confirmDeleteModalState ,clickedSectionID,clickedCourseID } = useSelector((state) => state.profile);
+  const { confirmDeleteModalState ,clickedSectionID,clickedCourseID,clickedSubSectionID ,toDelete} = useSelector((state) => state.profile);
 
   const dispatch=useDispatch();
 
   function onClickOk(){
-    console.log("Deleting Section")
-    dispatch(deleteSection(clickedSectionID,clickedCourseID))
+    if(toDelete==='Section'){
+      console.log("Deleting Section")
+      dispatch(deleteSection(clickedSectionID,clickedCourseID))
+    }
+    if(toDelete==='Subsection'){
+      console.log("Deleting Sub-Section")
+      dispatch(deleteSubSection(clickedCourseID,clickedSectionID,clickedSubSectionID))
+    }
     dispatch(setConfirmationDeleteModalStatus(!confirmDeleteModalState))
+    
   }
 
   function onClickGoBack(){

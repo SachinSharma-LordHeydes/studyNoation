@@ -8,12 +8,12 @@ exports.otpGeneratorHandler = async (req, res) => {
     // Check if user is already present
     const checkuserModelPresent = await userModel.findOne({ email });
     // If user found with provided email
-    // if (checkuserModelPresent) {
-    //   return res.status(401).json({
-    //     success: false,
-    //     message: 'User is already registered',
-    //   });
-    // }
+    if (checkuserModelPresent) {
+      return res.status(401).json({
+        success: false,
+        message: 'User is already registered',
+      });
+    }
     let otp = otpGenerator.generate(6, {
       upperCaseAlphabets: false,
       lowerCaseAlphabets: false,
